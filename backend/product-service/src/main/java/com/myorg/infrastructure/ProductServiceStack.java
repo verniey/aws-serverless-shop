@@ -1,13 +1,16 @@
 package com.myorg.infrastructure;
 
+import software.amazon.awscdk.CfnOutput;
+import software.amazon.awscdk.services.apigateway.*;
 import software.constructs.Construct;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.apigateway.LambdaRestApi;
-import software.amazon.awscdk.services.apigateway.LambdaIntegration;
+
+import java.util.List;
+import java.util.Map;
 
 public class ProductServiceStack extends Stack {
     public ProductServiceStack(final Construct scope, final String id, final StackProps props) {
@@ -16,25 +19,57 @@ public class ProductServiceStack extends Stack {
         // Lambda function for getProductsList
         Function getProductsListFunction = Function.Builder.create(this, "getProductsList")
             .runtime(Runtime.JAVA_11)
-            .handler("com.myorg.handlers.GetProductsListHandler::handleRequest") // 🔥 Corrected handler path
-            .code(Code.fromAsset("target/product-service-1.0-SNAPSHOT.jar")) // 🔥 Correct path
+            .handler("com.myorg.handlers.GetProductsListHandler::handleRequest")
+            .code(Code.fromAsset("target/product_service-1.0-SNAPSHOT.jar"))
             .build();
 
         // Lambda function for getProductsById
-        Function getProductsByIdFunction = Function.Builder.create(this, "getProductsById")
+        Function getProductByIdFunction = Function.Builder.create(this, "getProductsById")
             .runtime(Runtime.JAVA_11)
-            .handler("com.myorg.handlers.GetProductsByIdHandler::handleRequest") // 🔥 Corrected handler path
-            .code(Code.fromAsset("target/product-service-1.0-SNAPSHOT.jar")) // 🔥 Correct path
+            .handler("com.myorg.handlers.GetProductByIdHandler::handleRequest")
+            .code(Code.fromAsset("target/product_service-1.0-SNAPSHOT.jar"))
             .build();
 
-        // API Gateway
+        // API Gateway with CORS enabled
         LambdaRestApi api = LambdaRestApi.Builder.create(this, "ProductApi")
-            .defaultIntegration(new LambdaIntegration(getProductsListFunction)) // 🔥 Correct integration
+            .handler(getProductsListFunction)
             .proxy(false)
             .build();
 
-        // Define API resources and methods
-        api.getRoot().addResource("products").addMethod("GET", new LambdaIntegration(getProductsListFunction));
-        api.getRoot().addResource("products").addResource("{productId}").addMethod("GET", new LambdaIntegration(getProductsByIdFunction));
+        // Create 'products' resource only ONCE
+        IResource productsResource = api.getRoot().addResource("products");
+
+        // Add GET method for listing all products
+        productsResource.addMethod("GET", new LambdaIntegration(getProductsListFunction),
+            MethodOptions.builder()
+                .authorizationType(AuthorizationType.NONE)
+                .methodResponses(List.of(
+                    MethodResponse.builder()
+                        .statusCode("200")
+                        .responseParameters(Map.of(
+                            "method.response.header.Access-Control-Allow-Origin", true
+                        ))
+                        .build()))
+                .build());
+
+        // Add '{productId}' sub-resource under 'products'
+        productsResource.addResource("{productId}")
+            .addMethod("GET", new LambdaIntegration(getProductByIdFunction),
+                MethodOptions.builder()
+                    .authorizationType(AuthorizationType.NONE)
+                    .methodResponses(List.of(
+                        MethodResponse.builder()
+                            .statusCode("200")
+                            .responseParameters(Map.of(
+                                "method.response.header.Access-Control-Allow-Origin", true
+                            ))
+                            .build()))
+                    .build());
+
+        // Output API Gateway URL after deployment
+        CfnOutput.Builder.create(this, "ApiGatewayUrl")
+            .description("The URL for the Product Service API")
+            .value(api.getUrl())
+            .build();
     }
 }

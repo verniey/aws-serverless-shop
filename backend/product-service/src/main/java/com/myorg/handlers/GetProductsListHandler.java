@@ -2,16 +2,47 @@ package com.myorg.handlers;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.myorg.services.ProductService;
-import com.google.gson.Gson;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.myorg.models.Product;
+
+import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
-public class GetProductsListHandler implements RequestHandler<Map<String, Object>, String> { // 🔥 Changed Object to Map<String, Object>
-  private static final Gson gson = new Gson();
-  private final ProductService productService = new ProductService();
+public class GetProductsListHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+
+  private static final ObjectMapper objectMapper = new ObjectMapper();
+  private static List<Product> products;
+
+  static {
+    try (InputStream inputStream = GetProductsListHandler.class.getClassLoader().getResourceAsStream("products.json")) {
+      if (inputStream == null) {
+        throw new RuntimeException("products.json file not found in resources");
+      }
+      products = objectMapper.readValue(inputStream, objectMapper.getTypeFactory().constructCollectionType(List.class, Product.class));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to load products.json", e);
+    }
+  }
 
   @Override
-  public String handleRequest(Map<String, Object> input, Context context) {
-    return gson.toJson(productService.getAllProducts());
+  public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
+    return new APIGatewayProxyResponseEvent()
+        .withStatusCode(200)
+        .withHeaders(Map.of(
+            "Content-Type", "application/json",
+            "Access-Control-Allow-Origin", "*"
+        ))
+        .withBody(toJson(products));
+  }
+
+  private String toJson(Object object) {
+    try {
+      return objectMapper.writeValueAsString(object);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }
