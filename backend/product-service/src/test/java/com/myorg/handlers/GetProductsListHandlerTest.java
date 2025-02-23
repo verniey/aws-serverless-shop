@@ -8,24 +8,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myorg.models.Product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import static org.assertj.core.api.Assertions.assertThat;
 
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 class GetProductsListHandlerTest {
   private GetProductsListHandler handler;
   private Context mockContext;
-  private ObjectMapper objectMapper = new ObjectMapper();
+  private ObjectMapper objectMapper;
+  private List<Product> expectedProducts;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws IOException {
     handler = new GetProductsListHandler();
     mockContext = mock(Context.class);
+    objectMapper = new ObjectMapper();
+
+    expectedProducts = loadProductsFromJson("products.json");
   }
+
 
   @Test
   void testProductsListReturned() throws Exception {
@@ -36,22 +42,27 @@ class GetProductsListHandlerTest {
     APIGatewayProxyResponseEvent responseEvent = handler.handleRequest(requestEvent, mockContext);
 
     // Assert status code
-    assertEquals(200, responseEvent.getStatusCode());
+    assertThat(responseEvent.getStatusCode()).isEqualTo(200);
 
     // Parse response body
-    List<Product> products = objectMapper.readValue(responseEvent.getBody(), new TypeReference<>() {});
-    assertFalse(products.isEmpty(), "Product list should not be empty");
+    List<Product> actualProducts = objectMapper.readValue(responseEvent.getBody(), new TypeReference<>() {});
 
-    // Check first product details
-    assertEquals("1", products.get(0).getId());
-    assertEquals("Book One", products.get(0).getName());
-    assertEquals("A thrilling mystery novel that keeps you on edge.", products.get(0).getDescription());
-    assertEquals(29, products.get(0).getPrice());
+    // Ensure lists have the same size
+    assertThat(actualProducts).hasSameSizeAs(expectedProducts);
 
-    // Check fifth product details
-    assertEquals("5", products.get(4).getId());
-    assertEquals("Book Five", products.get(4).getName());
-    assertEquals("A thought-provoking exploration of human psychology.", products.get(4).getDescription());
-    assertEquals(40, products.get(4).getPrice());
+    // Assert product list content
+    assertThat(actualProducts)
+        .usingRecursiveFieldByFieldElementComparator()
+        .containsExactlyElementsOf(expectedProducts);
   }
+
+  private List<Product> loadProductsFromJson(String resourcePath) throws IOException {
+    InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resourcePath);
+    if (inputStream == null) {
+      throw new IOException("Test resource file not found: " + resourcePath);
+    }
+    return objectMapper.readValue(inputStream, new TypeReference<>() {});
+  }
+
+
 }
