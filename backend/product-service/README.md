@@ -108,13 +108,13 @@ GET /products
 [
   {
     "id": "1",
-    "name": "Product A",
+    "title": "Product A",
     "description": "Sample product",
     "price": 29.99
   },
   {
     "id": "2",
-    "name": "Product B",
+    "title": "Product B",
     "description": "Another product",
     "price": 35.50
   }
@@ -135,7 +135,7 @@ GET /products/1
 ```json
 {
   "id": "1",
-  "name": "Product A",
+  "title": "Product A",
   "description": "Sample product",
   "price": 29.99
 }
