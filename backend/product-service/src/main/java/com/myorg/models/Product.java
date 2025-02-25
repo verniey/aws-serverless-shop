@@ -2,7 +2,7 @@ package com.myorg.models;
 
 public class Product {
   private String id;
-  private String name;
+  private String title;
   private String description;
   private double price;
 
@@ -11,7 +11,7 @@ public class Product {
 
   public Product(String id, String name, String description, double price) {
     this.id = id;
-    this.name = name;
+    this.title = name;
     this.description = description;
     this.price = price;
   }
@@ -25,12 +25,12 @@ public class Product {
     this.id = id;
   }
 
-  public String getName() {
-    return name;
+  public String getTitle() {
+    return title;
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public void setTitle(String title) {
+    this.title = title;
   }
 
   public String getDescription() {

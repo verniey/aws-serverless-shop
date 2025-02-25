@@ -64,7 +64,7 @@ components:
         id:
           type: string
           example: "6"
-        name:
+        title:
           type: string
           example: "Laptop"
         description:
