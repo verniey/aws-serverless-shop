@@ -29,20 +29,34 @@ public class GetProductsListHandler implements RequestHandler<APIGatewayProxyReq
 
   @Override
   public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
-    return new APIGatewayProxyResponseEvent()
-        .withStatusCode(200)
-        .withHeaders(Map.of(
-            "Content-Type", "application/json",
-            "Access-Control-Allow-Origin", "*"
-        ))
-        .withBody(toJson(products));
+    return createSuccessResponse(200, products);
   }
 
-  private String toJson(Object object) {
+  private APIGatewayProxyResponseEvent createSuccessResponse(int statusCode, Object body) {
     try {
-      return objectMapper.writeValueAsString(object);
+      return new APIGatewayProxyResponseEvent()
+          .withStatusCode(statusCode)
+          .withHeaders(Map.of(
+              "Content-Type", "application/json",
+              "Access-Control-Allow-Origin", "*",
+              "Access-Control-Allow-Methods", "GET",
+              "Access-Control-Allow-Headers", "Content-Type"
+          ))
+          .withBody(objectMapper.writeValueAsString(body));
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      return createErrorResponse(500, "Error processing response");
     }
+  }
+
+  private APIGatewayProxyResponseEvent createErrorResponse(int statusCode, String message) {
+    return new APIGatewayProxyResponseEvent()
+        .withStatusCode(statusCode)
+        .withHeaders(Map.of(
+            "Content-Type", "application/json",
+            "Access-Control-Allow-Origin", "*",
+            "Access-Control-Allow-Methods", "GET",
+            "Access-Control-Allow-Headers", "Content-Type"
+        ))
+        .withBody("{\"message\": \"" + message + "\"}");
   }
 }

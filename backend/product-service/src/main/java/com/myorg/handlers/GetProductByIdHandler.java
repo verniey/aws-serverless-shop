@@ -30,24 +30,21 @@ public class GetProductByIdHandler implements RequestHandler<APIGatewayProxyRequ
 
   @Override
   public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
-    // Get productId from path parameters
-    Map<String, String> pathParams = event.getPathParameters();
-    if (pathParams == null || !pathParams.containsKey("productId")) {
+    String productId = event.getPathParameters() != null ? event.getPathParameters().get("productId") : null;
+
+    if (productId == null) {
       return createErrorResponse(400, "Missing productId in path parameters");
     }
 
-    String productId = pathParams.get("productId");
-
-    // Find product by ID
     Optional<Product> productOpt = products.stream()
         .filter(p -> String.valueOf(p.getId()).equals(productId))
         .findFirst();
 
-    if (productOpt.isPresent()) {
-      return createSuccessResponse(200, productOpt.get());
-    } else {
+    if (productOpt.isEmpty()) {
       return createErrorResponse(404, "Product not found");
     }
+
+    return createSuccessResponse(200, productOpt.get());
   }
 
   private APIGatewayProxyResponseEvent createSuccessResponse(int statusCode, Object body) {
@@ -56,13 +53,16 @@ public class GetProductByIdHandler implements RequestHandler<APIGatewayProxyRequ
           .withStatusCode(statusCode)
           .withHeaders(Map.of(
               "Content-Type", "application/json",
-              "Access-Control-Allow-Origin", "*"
+              "Access-Control-Allow-Origin", "*",
+              "Access-Control-Allow-Methods", "GET",
+              "Access-Control-Allow-Headers", "Content-Type"
           ))
           .withBody(objectMapper.writeValueAsString(body));
     } catch (Exception e) {
       return createErrorResponse(500, "Error processing response");
     }
   }
+
 
   private APIGatewayProxyResponseEvent createErrorResponse(int statusCode, String message) {
     return new APIGatewayProxyResponseEvent()
@@ -73,4 +73,7 @@ public class GetProductByIdHandler implements RequestHandler<APIGatewayProxyRequ
         ))
         .withBody("{\"error\": \"" + message + "\"}");
   }
+
+
+
 }
