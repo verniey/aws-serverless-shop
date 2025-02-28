@@ -1,4 +1,4 @@
-# Task 3 **Product Service**
+# Task 4 **Integration With Nosql Database**
 
 ## Useful commands
 
@@ -8,16 +8,6 @@
  * `cdk deploy`      deploy this stack to your default AWS account/region
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
-
----
-
-## **Product Service**
-
-This is a **serverless AWS Lambda-based product service** that provides endpoints to:
-- Retrieve a list of products
-- Fetch product details by ID
-
-The service is deployed using **AWS CDK** and exposed via **AWS API Gateway**.
 
 ---
 
@@ -51,15 +41,6 @@ Before running the project, ensure you have the following installed:
       ```sh
       cdk --version
       ```
-
----
-
-## **💾 Installation**
-Clone the repository and navigate to the project directory:
-
-```
-cd product-service
-```
 
 ---
 
@@ -99,54 +80,6 @@ mvn test
 ---
 
 ## **📡 API Endpoints**
-### **🔹 Get All Products**
-```http
-GET /products
-```
-**Example Response:**
-```json
-[
-  {
-    "id": "1",
-    "title": "Product A",
-    "description": "Sample product",
-    "price": 29.99
-  },
-  {
-    "id": "2",
-    "title": "Product B",
-    "description": "Another product",
-    "price": 35.50
-  }
-]
-```
-
----
-
-### **🔹 Get Product by ID**
-```http
-GET /products/{productId}
-```
-#### Example Request:
-```http
-GET /products/1
-```
-**Example Response (200 OK):**
-```json
-{
-  "id": "1",
-  "title": "Product A",
-  "description": "Sample product",
-  "price": 29.99
-}
-```
-
-**Example Response (404 Not Found):**
-```json
-{
-  "error": "Product not found"
-}
-```
 
 ---
 
@@ -168,21 +101,3 @@ To delete all AWS resources (API Gateway, Lambda, IAM roles):
 cdk destroy
 ```
 
----
-
-## **📜 OpenAPI Specification**
-A Swagger documentation file (`openapi.yaml`) is provided for testing in [Swagger Editor](https://editor.swagger.io/).
-
-To view it:
-1. Open [Swagger Editor](https://editor.swagger.io/)
-2. Click "File" → "Import File"
-3. Select **`openapi.yaml` located in `src/main/resources`.**
-
----
-
-## **📌 Notes**
-- This project is **serverless** and does **not** use a database.
-- Products are loaded from `products.json`.
-- Ensure AWS credentials are correctly set up before deployment.
-
----
