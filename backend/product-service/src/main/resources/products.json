@@ -1,0 +1,62 @@
+[
+  {
+    "id": "1",
+    "title": "Wireless Noise-Cancelling Headphones",
+    "description": "Experience crystal-clear sound with these premium wireless headphones. Perfect for music lovers and professionals alike.",
+    "price": 250
+  },
+  {
+    "id": "2",
+    "title": "Smart Home Security Camera",
+    "description": "Keep your home safe with this high-definition smart security camera. Features motion detection and night vision.",
+    "price": 120
+  },
+  {
+    "id": "3",
+    "title": "Ergonomic Office Chair",
+    "description": "Stay comfortable during long work hours with this ergonomic office chair. Adjustable lumbar support and breathable mesh design.",
+    "price": 300
+  },
+  {
+    "id": "4",
+    "title": "4K Ultra HD Smart TV",
+    "description": "Enjoy stunning visuals with this 55-inch 4K Ultra HD Smart TV. Comes with built-in streaming apps and voice control.",
+    "price": 700
+  },
+  {
+    "id": "5",
+    "title": "Portable Bluetooth Speaker",
+    "description": "Take your music anywhere with this compact and powerful Bluetooth speaker. Waterproof and durable design.",
+    "price": 80
+  },
+  {
+    "id": "6",
+    "title": "Electric Pressure Cooker",
+    "description": "Cook meals faster and healthier with this multi-functional electric pressure cooker. Includes 10 preset cooking programs.",
+    "price": 150
+  },
+  {
+    "id": "7",
+    "title": "Gaming Laptop",
+    "description": "Dominate the competition with this high-performance gaming laptop. Features a powerful GPU and high refresh rate display.",
+    "price": 1800
+  },
+  {
+    "id": "8",
+    "title": "Yoga Mat",
+    "description": "Enhance your yoga practice with this eco-friendly, non-slip yoga mat. Perfect for beginners and professionals.",
+    "price": 40
+  },
+  {
+    "id": "9",
+    "title": "Wireless Charging Pad",
+    "description": "Charge your devices effortlessly with this sleek wireless charging pad. Compatible with most smartphones.",
+    "price": 50
+  },
+  {
+    "id": "10",
+    "title": "Stainless Steel Water Bottle",
+    "description": "Stay hydrated on the go with this durable and stylish stainless steel water bottle. Keeps drinks cold for 24 hours.",
+    "price": 25
+  }
+]
