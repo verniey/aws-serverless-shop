@@ -1,103 +1,147 @@
-# Task 4 **Integration With Nosql Database**
-
-## Useful commands
-
- * `mvn package`     compile and run tests
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+Here’s your **complete and structured README** for **Task 4: Integration with NoSQL Database**.
 
 ---
 
-## **🚀 Prerequisites**
-Before running the project, ensure you have the following installed:
+# **Task 4: Integration With NoSQL Database** 🚀
 
-1. **Java 11**
-    - Check version:
-      ```sh
-      java -version
-      ```
+🔗 **Deployed Frontend URL:**  
+[CloudFront Distribution](https://d2i9wqrns222hu.cloudfront.net/)
 
-2. **Maven 3**
-    - Check version:
-      ```sh
-      mvn -version
-      ```
-
-3. **AWS CLI** (Configured with access keys)
-    - Check version:
-      ```sh
-      aws --version
-      ```
-    - Configure AWS credentials if not set up:
-      ```sh
-      aws configure
-      ```
-
-4. **AWS CDK**
-    - Check version:
-      ```sh
-      cdk --version
-      ```
+🔗 **API Gateway Base URL:**  
+`https://8c0xz8gwof.execute-api.eu-west-1.amazonaws.com/prod`
 
 ---
 
-## **🛠️ Build the Project**
-Compile and package the application:
+## 📌 **Table of Contents**
+- [🚀 DynamoDB Initialization Script](#-dynamodb-initialization-script-dynamodb-initsh)
+- [🛠️ Prerequisites](#-prerequisites)
+- [🚀 Build & Deploy](#-build--deploy)
+- [📡 API Endpoints](#-api-endpoints)
+- [📜 OpenAPI Specification](#-openapi-specification)
+- [🧪 Running Tests](#-running-tests)
+- [🗑️ Cleanup](#-cleanup)
 
+---
+
+## 🚀 **DynamoDB Initialization Script (`dynamodb-init.sh`)**
+
+This script populates **DynamoDB** with test data for **products** and **stocks**.
+
+### 🛠️ **Usage Instructions**
+1️⃣ **Navigate to the backend directory**
+   ```sh
+   cd backend
+   ```
+
+2️⃣ **Make the script executable**
+   ```sh
+   chmod +x dynamodb-init.sh
+   ```
+
+3️⃣ **Run the script**
+   ```sh
+   ./dynamodb-init.sh
+   ```
+
+### ⚠️ **Prerequisites**
+✅ AWS CLI must be **configured** with valid credentials.  
+✅ The **DynamoDB tables (`products` and `stocks`) must exist** before running the script.
+
+---
+
+## 🛠️ **Prerequisites**
+Before building and deploying, ensure you have the following installed:
+
+### ✅ **Software Requirements**
+| **Software** | **Version Check Command** |
+|--------------|---------------------------|
+| **Java 17+** | `java -version` |
+| **Maven 3+** | `mvn -version` |
+| **AWS CLI**  | `aws --version` |
+| **AWS CDK**  | `cdk --version` |
+
+### ✅ **AWS Configuration**
+If AWS CLI is not set up, configure it using:
+```sh
+aws configure
 ```
+
+---
+
+## 🚀 **Build & Deploy**
+### 🛠️ **Build the Project**
+Compile and package the application:
+```sh
 mvn clean package
 ```
 
----
-
-## **🚀 Deploy to AWS**
-To deploy the application to **AWS Lambda** with API Gateway:
-
+### 🚀 **Deploy to AWS**
+To deploy the backend to **AWS Lambda & API Gateway**, run:
 ```sh
 cdk bootstrap   # (Only required for first-time setup)
 cdk synth       # Synthesizes the CloudFormation template
 cdk deploy      # Deploys the stack
 ```
 
-After deployment, the API Gateway URL will be displayed:
+After deployment, the **API Gateway URL** will be displayed:
 ```
 Outputs:
-ProductServiceStack.ApiGatewayUrl = https://your-api-id.execute-api.eu-west-1.amazonaws.com/prod/
+ProductServiceStack.ApiGatewayUrl = https://8c0xz8gwof.execute-api.eu-west-1.amazonaws.com/prod/
 ```
 
 ---
 
-## **🧪 Running Tests**
-Run unit tests using:
-
+## 📡 **API Endpoints**
+### 📝 **Create a Product**
+```sh
+curl -X POST "https://8c0xz8gwof.execute-api.eu-west-1.amazonaws.com/prod/products" \
+     -H "Content-Type: application/json" \
+     -d '{"title":"Test Product","description":"This is a test product","price":100,"count":5}'
 ```
+
+### 🔍 **Get All Products**
+```sh
+curl -X GET "https://8c0xz8gwof.execute-api.eu-west-1.amazonaws.com/prod/products"
+```
+
+### 🔍 **Get Product by ID**
+```sh
+curl -X GET "https://8c0xz8gwof.execute-api.eu-west-1.amazonaws.com/prod/products/{productId}"
+```
+
+---
+
+## 📜 **OpenAPI Specification**
+An OpenAPI (Swagger) documentation file (`openapi.yaml`) is available for testing.
+
+### 🛠️ **How to View in Swagger Editor**
+1. Open [Swagger Editor](https://editor.swagger.io/)
+2. Click **File** → **Import File**
+3. Select **`openapi.yaml`** from `src/main/resources`
+
+---
+
+## 🧪 **Running Tests**
+Run **unit tests** with:
+```sh
 mvn test
 ```
 
 ---
 
-## **📡 API Endpoints**
-
----
-
-## **🐛 Debugging**
-### **Check Lambda Logs**
-If something isn’t working, view logs using:
-
-```
-aws logs tail /aws/lambda/ProductServiceStack-getProductsList --follow
-aws logs tail /aws/lambda/ProductServiceStack-getProductsById --follow
-```
-
----
-
-## **🗑️ Cleanup**
+## 🗑️ **Cleanup**
 To delete all AWS resources (API Gateway, Lambda, IAM roles):
-
-```
+```sh
 cdk destroy
 ```
 
+---
+
+## **🔗 References**
+- **AWS DynamoDB Docs:** [https://docs.aws.amazon.com/dynamodb](https://docs.aws.amazon.com/dynamodb)
+- **AWS CDK Docs:** [https://docs.aws.amazon.com/cdk](https://docs.aws.amazon.com/cdk)
+- **Swagger Editor:** [https://editor.swagger.io/](https://editor.swagger.io/)
+
+---
+
+Now the **README is complete, structured, and ready for deployment!** 🚀

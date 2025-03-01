@@ -1,12 +1,12 @@
 openapi: 3.0.1
 info:
   title: Product Service API
-  description: API for managing products using AWS Lambda and API Gateway.
-  version: "1.0"
+  description: API for managing products and their stock counts.
+  version: 1.0.0
 
 servers:
-  - url: https://lsaaozqyr5.execute-api.eu-west-1.amazonaws.com/prod
-    description: Production Server
+  - url: https://8c0xz8gwof.execute-api.eu-west-1.amazonaws.com/prod
+    description: Production server
   - url: http://localhost:3000
     description: Local Development Server
 
@@ -14,26 +14,81 @@ paths:
   /products:
     get:
       summary: Get all products
-      description: Returns a list of all available products.
+      description: Returns a list of all available products with their stock counts.
       operationId: getProductsList
       tags:
         - Products
       responses:
-        "200":
-          description: Successful response with product list
+        '200':
+          description: Successful response with a list of products.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Product"
-        "500":
-          description: Internal Server Error
+                  $ref: "#/components/schemas/ProductDto"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "An unexpected error occurred while fetching products. Please try again later."
+
+    post:
+      summary: Create a new product
+      description: Creates a new product and its stock entry.
+      operationId: createProduct
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+            example:
+              title: "Test Product"
+              description: "This is a test product"
+              price: 100
+              count: 5
+      responses:
+        '201':
+          description: Product created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDto"
+        '400':
+          description: Invalid request data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                MissingTitle:
+                  value:
+                    error: "Field 'title' is required and cannot be empty."
+                InvalidPrice:
+                  value:
+                    error: "Field 'price' is required and must be a positive number."
+                InvalidCount:
+                  value:
+                    error: "Field 'count' must be a non-negative number."
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "An unexpected error occurred while creating the product. Please try again later."
 
   /products/{productId}:
     get:
       summary: Get a product by ID
-      description: Returns a specific product based on its ID.
+      description: Returns a single product by its ID.
       operationId: getProductById
       tags:
         - Products
@@ -41,36 +96,100 @@ paths:
         - name: productId
           in: path
           required: true
-          description: ID of the product to retrieve
           schema:
             type: string
+          description: The unique identifier of the product to retrieve.
       responses:
-        "200":
-          description: Product found
+        '200':
+          description: Product found.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Product"
-        "404":
-          description: Product not found
-        "500":
-          description: Internal Server Error
+                $ref: "#/components/schemas/ProductDto"
+        '400':
+          description: Invalid product ID format.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Invalid product ID format. Expected a valid UUID."
+        '404':
+          description: Product not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Product not found"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "An unexpected error occurred while fetching the product. Please try again later."
 
 components:
   schemas:
-    Product:
+    ProductDto:
       type: object
       properties:
         id:
           type: string
-          example: "6"
+          description: The unique identifier of the product.
+          example: "19ba3d6a-f8ed-491b-a192-0a33b71b38c4"
         title:
           type: string
+          description: The title of the product.
           example: "Laptop"
         description:
           type: string
-          example: "A high-end gaming laptop"
+          description: The description of the product.
+          example: "A high-end gaming laptop."
         price:
-          type: number
-          format: float
-          example: 1299.99
+          type: integer
+          description: The price of the product in cents.
+          example: 1299
+        count:
+          type: integer
+          description: The number of items available in stock.
+          example: 5
+      required:
+        - id
+        - title
+        - price
+        - count
+
+    CreateProductRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: The title of the product.
+          example: "Gaming Mouse"
+        description:
+          type: string
+          description: The description of the product.
+          example: "Wireless gaming mouse with RGB lighting."
+        price:
+          type: integer
+          description: The price of the product in cents.
+          example: 5999
+        count:
+          type: integer
+          description: The number of items available in stock.
+          example: 10
+      required:
+        - title
+        - price
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: The error message describing the issue.
+      required:
+        - error
