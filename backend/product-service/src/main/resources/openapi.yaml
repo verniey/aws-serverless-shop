@@ -150,7 +150,7 @@ components:
           example: "A high-end gaming laptop."
         price:
           type: integer
-          description: The price of the product in cents.
+          description: The price of the product.
           example: 1299
         count:
           type: integer
@@ -175,15 +175,17 @@ components:
           example: "Wireless gaming mouse with RGB lighting."
         price:
           type: integer
-          description: The price of the product in cents.
-          example: 5999
+          description: The price of the product.
+          example: 500
         count:
           type: integer
           description: The number of items available in stock.
           example: 10
       required:
         - title
+        - description
         - price
+        - count
 
     ErrorResponse:
       type: object
