@@ -5,29 +5,26 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.myorg.models.Product;
+import com.myorg.dto.ProductDto;
 import com.myorg.utils.LoggingUtils;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.Map;
 
 public class GetProductByIdHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
-  private static final String PRODUCTS_TABLE = "products"; // Hardcoded table name
+  private static final String PRODUCTS_TABLE = "products";
+  private static final String STOCKS_TABLE = "stocks";
   private final DynamoDbClient dynamoDbClient;
 
-  // Constructor for dependency injection (used in tests)
-  public GetProductByIdHandler(DynamoDbClient dynamoDbClient) {
-    this.dynamoDbClient = dynamoDbClient;
-  }
-
-  // Default constructor for production usage
   public GetProductByIdHandler() {
     this.dynamoDbClient = DynamoDbClient.create();
+
+  }
+  public GetProductByIdHandler(DynamoDbClient dynamoDbClient) {
+    this.dynamoDbClient = dynamoDbClient;
   }
 
   @Override
@@ -46,34 +43,38 @@ public class GetProductByIdHandler implements RequestHandler<APIGatewayProxyRequ
     try {
       context.getLogger().log("Fetching product with ID: " + productId);
 
-      // Use the hardcoded table name
+      // Fetch product from DynamoDB
       GetItemResponse productResponse = dynamoDbClient.getItem(GetItemRequest.builder()
           .tableName(PRODUCTS_TABLE)
           .key(Map.of("id", AttributeValue.builder().s(productId).build()))
           .build());
 
       if (!productResponse.hasItem()) {
-        context.getLogger().log("Product not found" + productId);
         return createErrorResponse(404, "Product not found");
       }
 
-      Product product = mapToProduct(productResponse.item());
-      context.getLogger().log("Fetched product: " + product);
+      // Fetch stock data
+      GetItemResponse stockResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+          .tableName(STOCKS_TABLE)
+          .key(Map.of("product_id", AttributeValue.builder().s(productId).build()))
+          .build());
 
-      return createSuccessResponse(200, product);
+      int count = stockResponse.hasItem() ? Integer.parseInt(stockResponse.item().get("count").n()) : 0;
+
+      // Map to DTO
+      ProductDto productDto = new ProductDto(
+          productResponse.item().get("id").s(),
+          count,
+          productResponse.item().get("title").s(),
+          productResponse.item().get("description").s(),
+          Integer.parseInt(productResponse.item().get("price").n())
+      );
+
+      return createSuccessResponse(200, productDto);
     } catch (Exception e) {
       context.getLogger().log("Error fetching product: " + e.getMessage());
       return createErrorResponse(500, "Error fetching product from DynamoDB: " + e.getMessage());
     }
-  }
-
-  private Product mapToProduct(Map<String, AttributeValue> item) {
-    return new Product(
-        item.get("id").s(),
-        item.get("title").s(),
-        item.get("description").s(),
-        Integer.parseInt(item.get("price").n())
-    );
   }
 
   private APIGatewayProxyResponseEvent createSuccessResponse(int statusCode, Object body) {
@@ -82,9 +83,7 @@ public class GetProductByIdHandler implements RequestHandler<APIGatewayProxyRequ
           .withStatusCode(statusCode)
           .withHeaders(Map.of(
               "Content-Type", "application/json",
-              "Access-Control-Allow-Origin", "*",
-              "Access-Control-Allow-Methods", "GET,OPTIONS",
-              "Access-Control-Allow-Headers", "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token"
+              "Access-Control-Allow-Origin", "*"
           ))
           .withBody(objectMapper.writeValueAsString(body));
     } catch (Exception e) {
@@ -95,14 +94,10 @@ public class GetProductByIdHandler implements RequestHandler<APIGatewayProxyRequ
   private APIGatewayProxyResponseEvent createErrorResponse(int statusCode, String message) {
     return new APIGatewayProxyResponseEvent()
         .withStatusCode(statusCode)
-        .withHeaders(getResponseHeaders())
+        .withHeaders(Map.of(
+            "Content-Type", "application/json",
+            "Access-Control-Allow-Origin", "*"
+        ))
         .withBody("{\"error\": \"" + message + "\"}");
-  }
-
-  private Map<String, String> getResponseHeaders() {
-    return Map.of(
-        "Content-Type", "application/json",
-        "Access-Control-Allow-Origin", "*" // Restrict to specific origins in production
-    );
   }
 }

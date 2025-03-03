@@ -1,102 +1,128 @@
 package com.myorg.handlers;
 
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.myorg.models.Product;
+import com.myorg.dto.ProductDto;
+import com.myorg.handlers.GetProductByIdHandler;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class GetProductByIdHandlerTest {
+
   private GetProductByIdHandler handler;
   private Context mockContext;
+  private LambdaLogger mockLogger;
   private DynamoDbClient mockDynamoDbClient;
-  private ObjectMapper objectMapper = new ObjectMapper();
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @BeforeEach
   void setUp() {
     mockDynamoDbClient = mock(DynamoDbClient.class);
-    handler = new GetProductByIdHandler(mockDynamoDbClient);
     mockContext = mock(Context.class);
+    mockLogger = mock(LambdaLogger.class);
 
-    // Mock `getLogger()` to avoid NullPointerException
-    LambdaLogger mockLogger = mock(LambdaLogger.class);
+    // Ensure context.getLogger() returns a mock logger
     when(mockContext.getLogger()).thenReturn(mockLogger);
+
+    handler = new GetProductByIdHandler(mockDynamoDbClient);
   }
 
   @Test
-  @DisplayName("✅ Should return product successfully when found by ID")
+  void testMissingProductId() {
+    APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
+    requestEvent.setPathParameters(new HashMap<>()); // No productId
+
+    APIGatewayProxyResponseEvent responseEvent = handler.handleRequest(requestEvent, mockContext);
+
+    assertEquals(400, responseEvent.getStatusCode());
+    assertEquals("{\"error\": \"Invalid productId\"}", responseEvent.getBody());
+
+    verify(mockLogger, atLeastOnce()).log(anyString());
+  }
+
+  @Test
+  void testProductNotFound() {
+    APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
+    requestEvent.setPathParameters(Map.of("productId", "non-existing-id"));
+
+    when(mockDynamoDbClient.getItem(any(GetItemRequest.class)))
+        .thenReturn(GetItemResponse.builder().build()); // Simulate empty response
+
+    APIGatewayProxyResponseEvent responseEvent = handler.handleRequest(requestEvent, mockContext);
+
+    assertEquals(404, responseEvent.getStatusCode());
+    assertEquals("{\"error\": \"Product not found\"}", responseEvent.getBody());
+
+    verify(mockLogger, atLeastOnce()).log(anyString());
+  }
+
+  @Test
   void testProductFound() throws Exception {
     APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
-    requestEvent.setPathParameters(Map.of("productId", "1"));
+    requestEvent.setPathParameters(Map.of("productId", "valid-id"));
 
-    // Mock response from DynamoDB
-    GetItemResponse mockResponse = GetItemResponse.builder()
+    // Mock DynamoDB product response
+    GetItemResponse productResponse = GetItemResponse.builder()
         .item(Map.of(
-            "id", AttributeValue.builder().s("1").build(),
-            "title", AttributeValue.builder().s("Product A").build(),
-            "description", AttributeValue.builder().s("Description A").build(),
-            "price", AttributeValue.builder().n("50").build()
+            "id", AttributeValue.builder().s("valid-id").build(),
+            "title", AttributeValue.builder().s("Test Product").build(),
+            "description", AttributeValue.builder().s("A test product description").build(),
+            "price", AttributeValue.builder().n("150").build()
         ))
         .build();
 
-    when(mockDynamoDbClient.getItem(any(GetItemRequest.class))).thenReturn(mockResponse);
+    // Mock DynamoDB stock response
+    GetItemResponse stockResponse = GetItemResponse.builder()
+        .item(Map.of(
+            "product_id", AttributeValue.builder().s("valid-id").build(),
+            "count", AttributeValue.builder().n("10").build()
+        ))
+        .build();
 
-    // Call Lambda handler
+    when(mockDynamoDbClient.getItem(any(GetItemRequest.class)))
+        .thenReturn(productResponse) // First call - product table
+        .thenReturn(stockResponse);  // Second call - stocks table
+
     APIGatewayProxyResponseEvent responseEvent = handler.handleRequest(requestEvent, mockContext);
 
-    // Assertions
-    assertThat(responseEvent.getStatusCode()).isEqualTo(200);
-    Product product = objectMapper.readValue(responseEvent.getBody(), Product.class);
-    assertThat(product.getId()).isEqualTo("1");
-    assertThat(product.getTitle()).isEqualTo("Product A");
+    assertEquals(200, responseEvent.getStatusCode());
+
+    ProductDto responseProduct = objectMapper.readValue(responseEvent.getBody(), ProductDto.class);
+    assertEquals("valid-id", responseProduct.getId());
+    assertEquals("Test Product", responseProduct.getTitle());
+    assertEquals("A test product description", responseProduct.getDescription());
+    assertEquals(150, responseProduct.getPrice());
+    assertEquals(10, responseProduct.getCount());
+
+    verify(mockLogger, atLeastOnce()).log(anyString());
   }
 
   @Test
-  @DisplayName("✅ Should return 404 when product is not found")
-  void testProductNotFound() {
+  void testDatabaseError() {
     APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
-    requestEvent.setPathParameters(Map.of("productId", "999"));
+    requestEvent.setPathParameters(Map.of("productId", "valid-id"));
 
-    // Mock empty response
     when(mockDynamoDbClient.getItem(any(GetItemRequest.class)))
-        .thenReturn(GetItemResponse.builder().build());
+        .thenThrow(new RuntimeException("Database connection failed"));
 
-    // Call Lambda handler
     APIGatewayProxyResponseEvent responseEvent = handler.handleRequest(requestEvent, mockContext);
 
-    // Assertions
-    assertThat(responseEvent.getStatusCode()).isEqualTo(404);
-    assertThat(responseEvent.getBody()).contains("Product not found");
-  }
+    assertEquals(500, responseEvent.getStatusCode());
+    assertTrue(responseEvent.getBody().contains("Error fetching product from DynamoDB"));
 
-  @Test
-  @DisplayName("✅ Should return 500 when DynamoDB operation fails")
-  void testDynamoDbError() {
-    APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
-    requestEvent.setPathParameters(Map.of("productId", "1"));
-
-    // Mock DynamoDB error
-    when(mockDynamoDbClient.getItem(any(GetItemRequest.class)))
-        .thenThrow(new RuntimeException("DynamoDB error"));
-
-    // Call Lambda handler
-    APIGatewayProxyResponseEvent responseEvent = handler.handleRequest(requestEvent, mockContext);
-
-    // Assertions
-    assertThat(responseEvent.getStatusCode()).isEqualTo(500);
-    assertThat(responseEvent.getBody()).contains("Error fetching product from DynamoDB");
+    verify(mockLogger, atLeastOnce()).log(anyString());
   }
 }

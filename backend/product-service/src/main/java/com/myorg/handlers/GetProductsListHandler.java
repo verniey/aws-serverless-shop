@@ -19,6 +19,10 @@ public class GetProductsListHandler implements RequestHandler<APIGatewayProxyReq
   private final String productsTable = "products";
   private final String stocksTable = "stocks";
 
+  public GetProductsListHandler() {
+    this.dynamoDbClient = DynamoDbClient.create();  // Initialize the DynamoDB client
+  }
+
   public GetProductsListHandler(DynamoDbClient mockDynamoDbClient) {
     this.dynamoDbClient = DynamoDbClient.create();
   }

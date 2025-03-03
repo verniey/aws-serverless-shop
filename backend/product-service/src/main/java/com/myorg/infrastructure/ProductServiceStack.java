@@ -120,10 +120,14 @@ public class ProductServiceStack extends Stack {
 
 
     // Grant DynamoDB GetItem permission for retrieving a specific product
+    // Grant DynamoDB GetItem permission for retrieving a specific product
     getProductByIdFunction.addToRolePolicy(PolicyStatement.Builder.create()
         .effect(Effect.ALLOW)
         .actions(List.of("dynamodb:GetItem"))
-        .resources(List.of("arn:aws:dynamodb:eu-west-1:503561446710:table/products"))
+        .resources(List.of(
+            "arn:aws:dynamodb:eu-west-1:503561446710:table/products",
+            "arn:aws:dynamodb:eu-west-1:503561446710:table/stocks" // Add this line
+        ))
         .build());
 
     // Allow CreateProduct Lambda to write to both 'products' and 'stocks' tables
