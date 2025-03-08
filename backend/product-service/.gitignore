@@ -13,3 +13,5 @@ cdk.out
 
 dependency-reduced-pom.xml
 
+.DS_Store
+.idea/
